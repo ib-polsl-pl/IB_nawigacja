@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>279</width>
-    <height>286</height>
+    <width>383</width>
+    <height>461</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
@@ -68,6 +68,25 @@
         </property>
         <property name="value">
          <double>0.500000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_toolTipTransform">
+        <property name="text">
+         <string>Tool Tip Transform:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="qMRMLNodeComboBox" name="toolTipTransformSelector">
+        <property name="toolTip">
+         <string>Pick the transform of the tip of the tool.</string>
+        </property>
+        <property name="nodeTypes">
+         <stringlist>
+          <string>vtkMRMLLinearTransformNode</string>
+         </stringlist>
         </property>
        </widget>
       </item>
@@ -151,7 +170,7 @@
       <string>Advanced</string>
      </property>
      <property name="collapsed">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
      <layout class="QFormLayout" name="formLayout_3">
       <item row="0" column="0">
@@ -168,6 +187,100 @@
         </property>
         <property name="text">
          <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_shift_x">
+        <property name="text">
+         <string>Apply transverse (X) offset: </string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QCheckBox" name="offsetXCheckBox">
+        <property name="toolTip">
+         <string>If checked, model will be shifted along transverse (X) axis</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_shift_y">
+        <property name="text">
+         <string>Apply sagittal (Y) offset: </string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QCheckBox" name="offsetYCheckBox">
+        <property name="toolTip">
+         <string>If checked, model will be shifted along sagittal (Y) axis</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="label_shift_z">
+        <property name="text">
+         <string>Apply vertical (Z) offset: </string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QCheckBox" name="offsetZCheckBox">
+        <property name="toolTip">
+         <string>If checked, model will be shifted along vertical (Z) axis</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_empty">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="0">
+       <widget class="QLabel" name="label_empty_2">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="0">
+       <widget class="QLabel" name="label_shift_all_models">
+        <property name="text">
+         <string>Apply offset to all models (ureters, skin, vessels etc.): </string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="1">
+       <widget class="QCheckBox" name="offsetAllModelsCheckBox">
+        <property name="toolTip">
+         <string>If checked, all model will be shifted. Otherwise, only ureters</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
         </property>
        </widget>
       </item>
