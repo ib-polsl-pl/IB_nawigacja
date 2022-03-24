@@ -1,3 +1,4 @@
+import json
 import os
 import unittest
 import logging
@@ -114,6 +115,7 @@ class ModelOffsetWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     # Set scene in MRML widgets. Make sure that in Qt designer the top-level qMRMLWidget's
     # "mrmlSceneChanged(vtkMRMLScene*)" signal in is connected to each MRML widget's.
     # "setMRMLScene(vtkMRMLScene*)" slot.
+    # TODO VERY IMPORTANT!!! CHECK IT OUT! -> transform selector
     uiWidget.setMRMLScene(slicer.mrmlScene)
 
     # Create logic class. Logic implements all computations that should be possible to run
@@ -128,6 +130,7 @@ class ModelOffsetWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     # These connections ensure that whenever user changes some settings on the GUI, that is saved in the MRML scene
     # (in the selected parameter node).
+    # TODO update also here!
     self.ui.inputSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
     self.ui.outputSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
     self.ui.imageThresholdSliderWidget.connect("valueChanged(double)", self.updateParameterNodeFromGUI)
@@ -189,6 +192,7 @@ class ModelOffsetWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
       firstVolumeNode = slicer.mrmlScene.GetFirstNodeByClass("vtkMRMLScalarVolumeNode")
       if firstVolumeNode:
         self._parameterNode.SetNodeReferenceID("InputVolume", firstVolumeNode.GetID())
+    # TODO setup also input model
 
   def setParameterNode(self, inputParameterNode):
     """
@@ -342,6 +346,23 @@ class ModelOffsetLogic(ScriptedLoadableModuleLogic):
 
     stopTime = time.time()
     logging.info('Processing completed in {0:.2f} seconds'.format(stopTime-startTime))
+
+  def load_ureter_coords(self, input_file: str):
+    if not input_file.endswith('.json'):
+        raise RuntimeError("only Slicer-specific jsons supported")
+    with open(input_file) as f:
+      point_struct = json.loads(f.read())
+      controlPoints = point_struct['markups'][0]['controlPoints']
+      points = [p['position'] for p in controlPoints]
+      # points = np.array(points)
+      return points
+
+  def get_nearest_point(self, current_location, control_points):
+    import numpy as np
+    control_points = np.array(control_points)
+    current_location = np.array(current_location)
+    # zrobić lexsort
+    np.sort(control_points, axis=0)
 
 #
 # ModelOffsetTest
