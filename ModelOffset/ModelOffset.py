@@ -5,6 +5,7 @@ import logging
 import vtk, qt, ctk, slicer
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
+import numpy as np
 
 #
 # ModelOffset
@@ -381,6 +382,30 @@ class ModelOffsetLogic(ScriptedLoadableModuleLogic):
       vtkId = selectedModels.GetId(i)
       selectedItemsIDs.append(self.shNode.GetItemDataNode(vtkId).GetID())
 
+    #toolTipTransform = slicer.util.getNode('StylusTipToStylus')
+    tip_mat = vtk.vtkMatrix4x4()
+    toolTipTransform.GetMatrixTransformToWorld(tip_mat)
+    tip_location = np.array([tip_mat.GetElement(0, 3), tip_mat.GetElement(1, 3), tip_mat.GetElement(2, 3)])
+    # tip_transf = vtk.vtkGeneralTransform()
+    # toolTipTransform.GetTransformToWorld(tip_transf)
+
+    points = []
+    p = [np.nan, np.nan, np.nan]
+    for i in range(controlPoints.GetNumberOfControlPoints()):
+      controlPoints.GetNthControlPointPosition(i, p)
+      points.append(p[:])  # deep-copy the `p`!
+
+    target_point = self.get_nearest_point(tip_location, points)
+
+    offset = target_point - tip_location
+
+    offset *= [alongX, alongY, alongZ]   # apply a mask of bools
+
+    finalTransform = vtk.vtkTransform()
+    finalTransform.Translate(offset)
+
+
+
     import time
     startTime = time.time()
     logging.info('Processing started')
@@ -410,11 +435,41 @@ class ModelOffsetLogic(ScriptedLoadableModuleLogic):
       return points
 
   def get_nearest_point(self, current_location, control_points):
+    """
+    :param current_location: [x y z] coordinates
+    :param control_points: [[x1 y1 z1] ... [xn yn zn]]
+    """
     import numpy as np
-    control_points = np.array(control_points)
     current_location = np.array(current_location)
-    # zrobić lexsort
-    np.sort(control_points, axis=0)
+    z = current_location[2]
+    control_points = np.array(control_points)
+    assert (control_points.ndim == 2 and control_points.shape[1] == 3), "Wrong dimension of control points"
+    # sort the files along third dimension
+    control_points = control_points[np.lexsort([control_points[:, 2]])]
+    if len(np.unique(control_points[:, 2])) < len(control_points):
+      raise ValueError("Control points are ill-formed. Only one point per Z-slice is allowed.")
+
+    min_z = control_points[0, 2]  # first row
+    max_z = control_points[-1, 2]  # last row
+
+    if z <= min_z:
+      return control_points[0]
+
+    if z >= max_z:
+      return control_points[-1]
+
+    if np.where(control_points[:,2] == z)[0]:
+      return control_points[ np.where(control_points[:,2] == z)[0][0] ]
+
+    ind = np.searchsorted(control_points[:,2], z)
+
+    prev_row = control_points[ind-1]
+    next_row = control_points[ind]
+
+    x = np.interp(z, [prev_row[2], next_row[2]], [prev_row[0], next_row[0]])
+    y = np.interp(z, [prev_row[2], next_row[2]], [prev_row[1], next_row[1]])
+
+    return np.array([x, y, z])
 
 #
 # ModelOffsetTest
