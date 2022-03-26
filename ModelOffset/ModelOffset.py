@@ -101,6 +101,7 @@ class ModelOffsetWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self._parameterNode = None
     self._updatingGUIFromParameterNode = False
     self.shNode = slicer.mrmlScene.GetSubjectHierarchyNode()
+    self.str_separator = '^'
 
   def setup(self):
     """
@@ -251,7 +252,7 @@ class ModelOffsetWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     currentItems = vtk.vtkIdList()
     currentItemsIds = self._parameterNode.GetNodeReferenceID("SelectedModels")
     if currentItemsIds is not None:
-      currentItemsIds = currentItemsIds.split(';')
+      currentItemsIds = currentItemsIds.split(self.str_separator)
       for it in currentItemsIds:
           it_id = slicer.util.getNode(it)
           x = self.shNode.GetItemByDataNode(it_id)
@@ -300,7 +301,7 @@ class ModelOffsetWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         currentItemsIDs.append(self.shNode.GetItemDataNode(vtkId).GetID())
       except AttributeError as e:  # it happens when the last item is unchecked
         print(e)
-    self._parameterNode.SetNodeReferenceID("SelectedModels", ';'.join(currentItemsIDs))
+    self._parameterNode.SetNodeReferenceID("SelectedModels", self.str_separator.join(currentItemsIDs))
 
     self._parameterNode.EndModify(wasModified)
 
@@ -397,12 +398,38 @@ class ModelOffsetLogic(ScriptedLoadableModuleLogic):
 
     target_point = self.get_nearest_point(tip_location, points)
 
-    offset = target_point - tip_location
+    offset = tip_location - target_point
 
     offset *= [alongX, alongY, alongZ]   # apply a mask of bools
 
     finalTransform = vtk.vtkTransform()
     finalTransform.Translate(offset)
+    new_transformNode = slicer.vtkMRMLTransformNode()
+    new_transformNode.SetName("Offset_from_a_plugin")
+    new_transformNode.SetAndObserveTransformToParent(finalTransform)
+    slicer.mrmlScene.AddNode(new_transformNode)
+
+    # BPWARN - all the selected models should have the same parent transform
+    old_parent_transform_node = slicer.util.getNode(selectedItemsIDs[0]).GetParentTransformNode()
+    if old_parent_transform_node:
+      if old_parent_transform_node.GetName() == "Offset_from_a_plugin":
+        slicer.mrmlScene.RemoveNode(old_parent_transform_node)
+      else:
+        new_transformNode.SetAndObserveTransformNodeID(old_parent_transform_node.GetID())
+        #model_node.SetAndObserveTransformNodeID(new_transformNode)
+
+        # transformNode2.SetAndObserveTransformNodeID(transformNode1.GetID())
+        # transformableNode.SetAndObserveTransformNodeID(transformNode2.GetID())
+
+
+    for itemId in selectedItemsIDs:
+      model_node = slicer.util.getNode(itemId)
+      model_node.SetAndObserveTransformNodeID(new_transformNode.GetID())
+
+
+
+    print(offset)
+
 
 
 

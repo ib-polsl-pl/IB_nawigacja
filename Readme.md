@@ -55,3 +55,9 @@ Następujące funkcje wywoływane są automatycznie w odpowiedzi na zdarzenia (
 Ważniejsze momenty
 - Tworzenie elementów UI na podstawie pliku XML Qt w funkcji `ModelOffsetWidget.setup()`
 
+
+
+# Problemy z kodem
+- zamiast przekazywać transformację końcówki, można podać odpowiedni model, a potem pobrać transformację funkcją:
+
+    slicer.util.getNode('StylusModel').GetParentTransformNode()
