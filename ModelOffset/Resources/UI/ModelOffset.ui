@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>383</width>
-    <height>461</height>
+    <width>442</width>
+    <height>692</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
@@ -20,7 +20,7 @@
       <item row="0" column="0">
        <widget class="QLabel" name="label">
         <property name="text">
-         <string>Input volume:</string>
+         <string>Input volume:-DELME</string>
         </property>
        </widget>
       </item>
@@ -37,37 +37,14 @@
         <property name="showChildNodeTypes">
          <bool>false</bool>
         </property>
+        <property name="noneEnabled">
+         <bool>true</bool>
+        </property>
         <property name="addEnabled">
          <bool>false</bool>
         </property>
         <property name="removeEnabled">
          <bool>false</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="label_3">
-        <property name="text">
-         <string>Image threshold:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="ctkSliderWidget" name="imageThresholdSliderWidget">
-        <property name="toolTip">
-         <string>Set threshold value for computing the output image. Voxels that have intensities lower than this value will set to zero.</string>
-        </property>
-        <property name="singleStep">
-         <double>0.100000000000000</double>
-        </property>
-        <property name="minimum">
-         <double>-100.000000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>500.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>0.500000000000000</double>
         </property>
        </widget>
       </item>
@@ -88,6 +65,104 @@
           <string>vtkMRMLLinearTransformNode</string>
          </stringlist>
         </property>
+        <property name="noneEnabled">
+         <bool>true</bool>
+        </property>
+        <property name="addEnabled">
+         <bool>false</bool>
+        </property>
+        <property name="removeEnabled">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_controlPointsTransform">
+        <property name="text">
+         <string>Control Points:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="qMRMLNodeComboBox" name="controlPointsSelector">
+        <property name="toolTip">
+         <string>Pick the markups of the ureter.</string>
+        </property>
+        <property name="nodeTypes">
+         <stringlist>
+          <string>vtkMRMLMarkupsFiducialNode</string>
+         </stringlist>
+        </property>
+        <property name="noneEnabled">
+         <bool>true</bool>
+        </property>
+        <property name="addEnabled">
+         <bool>false</bool>
+        </property>
+        <property name="removeEnabled">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>Image threshold:DELME</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="ctkSliderWidget" name="imageThresholdSliderWidget">
+        <property name="toolTip">
+         <string>Set threshold value for computing the output image. Voxels that have intensities lower than this value will set to zero.</string>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+        <property name="minimum">
+         <double>-100.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>500.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>0.500000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="label_appliedModels">
+        <property name="text">
+         <string>Apply to Models:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="qMRMLSubjectHierarchyTreeView" name="appliedModelsTreeView">
+        <property name="showRootItem">
+         <bool>true</bool>
+        </property>
+        <property name="nodeTypes">
+         <stringlist notr="true"/>
+        </property>
+        <property name="visibilityColumnVisible">
+         <bool>true</bool>
+        </property>
+        <property name="idColumnVisible">
+         <bool>false</bool>
+        </property>
+        <property name="colorColumnVisible">
+         <bool>false</bool>
+        </property>
+        <property name="excludeNodeAttributeNamesFilter">
+         <stringlist/>
+        </property>
+        <property name="attributeNameFilter">
+         <string/>
+        </property>
+        <attribute name="headerVisible">
+         <bool>true</bool>
+        </attribute>
        </widget>
       </item>
      </layout>
@@ -96,13 +171,13 @@
    <item>
     <widget class="ctkCollapsibleButton" name="outputsCollapsibleButton">
      <property name="text">
-      <string>Outputs</string>
+      <string>Outputs-DELME</string>
      </property>
      <layout class="QFormLayout" name="formLayout_4">
       <item row="0" column="0">
        <widget class="QLabel" name="label_2">
         <property name="text">
-         <string>Thresholded volume:</string>
+         <string>Thresholded volume:-DELME</string>
         </property>
        </widget>
       </item>
@@ -133,7 +208,7 @@
       <item row="1" column="0">
        <widget class="QLabel" name="label_5">
         <property name="text">
-         <string>Inverted volume:</string>
+         <string>Inverted volume:-DELME</string>
         </property>
        </widget>
       </item>
@@ -176,7 +251,7 @@
       <item row="0" column="0">
        <widget class="QLabel" name="label_4">
         <property name="text">
-         <string>Invert threshold: </string>
+         <string>Invert threshold: -DELME</string>
         </property>
        </widget>
       </item>
@@ -338,6 +413,11 @@
    <header>qMRMLWidget.h</header>
    <container>1</container>
   </customwidget>
+  <customwidget>
+   <class>qMRMLSubjectHierarchyTreeView</class>
+   <extends>QTreeView</extends>
+   <header>qMRMLSubjectHierarchyTreeView.h</header>
+  </customwidget>
  </customwidgets>
  <resources/>
  <connections>
@@ -386,6 +466,54 @@
     <hint type="destinationlabel">
      <x>173</x>
      <y>176</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>ModelOffset</sender>
+   <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
+   <receiver>toolTipTransformSelector</receiver>
+   <slot>setMRMLScene(vtkMRMLScene*)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>191</x>
+     <y>230</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>250</x>
+     <y>81</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>ModelOffset</sender>
+   <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
+   <receiver>controlPointsSelector</receiver>
+   <slot>setMRMLScene(vtkMRMLScene*)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>191</x>
+     <y>244</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>250</x>
+     <y>110</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>ModelOffset</sender>
+   <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
+   <receiver>appliedModelsTreeView</receiver>
+   <slot>setMRMLScene(vtkMRMLScene*)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>220</x>
+     <y>307</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>295</x>
+     <y>214</y>
     </hint>
    </hints>
   </connection>

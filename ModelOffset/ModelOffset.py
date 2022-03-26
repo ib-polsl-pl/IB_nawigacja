@@ -99,6 +99,7 @@ class ModelOffsetWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.logic = None
     self._parameterNode = None
     self._updatingGUIFromParameterNode = False
+    self.shNode = slicer.mrmlScene.GetSubjectHierarchyNode()
 
   def setup(self):
     """
@@ -115,7 +116,6 @@ class ModelOffsetWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     # Set scene in MRML widgets. Make sure that in Qt designer the top-level qMRMLWidget's
     # "mrmlSceneChanged(vtkMRMLScene*)" signal in is connected to each MRML widget's.
     # "setMRMLScene(vtkMRMLScene*)" slot.
-    # TODO VERY IMPORTANT!!! CHECK IT OUT! -> transform selector
     uiWidget.setMRMLScene(slicer.mrmlScene)
 
     # Create logic class. Logic implements all computations that should be possible to run
@@ -130,8 +130,11 @@ class ModelOffsetWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     # These connections ensure that whenever user changes some settings on the GUI, that is saved in the MRML scene
     # (in the selected parameter node).
-    # TODO update also here!
+    # BPWARNING add line here if a new widget is added
     self.ui.inputSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
+    self.ui.toolTipTransformSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
+    self.ui.controlPointsSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
+    self.ui.appliedModelsTreeView.connect("currentItemChanged(vtkIdType)", self.updateParameterNodeFromGUI)
     self.ui.outputSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
     self.ui.imageThresholdSliderWidget.connect("valueChanged(double)", self.updateParameterNodeFromGUI)
     self.ui.invertOutputCheckBox.connect("toggled(bool)", self.updateParameterNodeFromGUI)
@@ -192,7 +195,14 @@ class ModelOffsetWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
       firstVolumeNode = slicer.mrmlScene.GetFirstNodeByClass("vtkMRMLScalarVolumeNode")
       if firstVolumeNode:
         self._parameterNode.SetNodeReferenceID("InputVolume", firstVolumeNode.GetID())
-    # TODO setup also input model
+    # BPWARNING
+    # we can duplicate the lines above only if we want to pre-fill other combo-boxes
+
+    self.ui.appliedModelsTreeView.nodeTypes = ["vtkMRMLModelNode"]
+    # Other possibilities:
+    # self.ui.appliedModelsTreeView.sortFilterProxyModel().setNodeTypes(["vtkMRMLScalarVolumeNode"])
+    # self.ui.appliedModelsTreeView.sortFilterProxyModel().setNodeTypes(["vtkMRMLModelNode"])
+
 
   def setParameterNode(self, inputParameterNode):
     """
@@ -228,18 +238,32 @@ class ModelOffsetWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self._updatingGUIFromParameterNode = True
 
     # Update node selectors and sliders
+    # BPWARNING add line here if a new widget is added
     self.ui.inputSelector.setCurrentNode(self._parameterNode.GetNodeReference("InputVolume"))
+    self.ui.toolTipTransformSelector.setCurrentNode(self._parameterNode.GetNodeReference("toolTipTransform"))
+    self.ui.controlPointsSelector.setCurrentNode(self._parameterNode.GetNodeReference("controlPoints"))
     self.ui.outputSelector.setCurrentNode(self._parameterNode.GetNodeReference("OutputVolume"))
     self.ui.invertedOutputSelector.setCurrentNode(self._parameterNode.GetNodeReference("OutputVolumeInverse"))
     self.ui.imageThresholdSliderWidget.value = float(self._parameterNode.GetParameter("Threshold"))
     self.ui.invertOutputCheckBox.checked = (self._parameterNode.GetParameter("Invert") == "true")
+    # there is a lot of mess with a proper setting of selected models:
+    currentItems = vtk.vtkIdList()
+    currentItemsIds = self._parameterNode.GetNodeReferenceID("SelectedModels")
+    if currentItemsIds is not None:
+      currentItemsIds = currentItemsIds.split(';')
+      for it in currentItemsIds:
+          it_id = slicer.util.getNode(it)
+          x = self.shNode.GetItemByDataNode(it_id)
+          currentItems.InsertNextId(x)
+      self.ui.appliedModelsTreeView.setCurrentItems(currentItems)
 
     # Update buttons states and tooltips
-    if self._parameterNode.GetNodeReference("InputVolume") and self._parameterNode.GetNodeReference("OutputVolume"):
-      self.ui.applyButton.toolTip = "Compute output volume"
+    if self._parameterNode.GetNodeReference("InputVolume") and self._parameterNode.GetNodeReference("toolTipTransform")\
+            and self._parameterNode.GetNodeReference("controlPoints") and self._parameterNode.GetNodeReferenceID("SelectedModels"):
+      self.ui.applyButton.toolTip = "Translate models"
       self.ui.applyButton.enabled = True
     else:
-      self.ui.applyButton.toolTip = "Select input and output volume nodes"
+      self.ui.applyButton.toolTip = "Select all input data"
       self.ui.applyButton.enabled = False
 
     # All the GUI updates are done
@@ -256,11 +280,26 @@ class ModelOffsetWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     wasModified = self._parameterNode.StartModify()  # Modify all properties in a single batch
 
+    # BPWARNING add line here if a new widget is added
     self._parameterNode.SetNodeReferenceID("InputVolume", self.ui.inputSelector.currentNodeID)
+    self._parameterNode.SetNodeReferenceID("toolTipTransform", self.ui.toolTipTransformSelector.currentNodeID)
+    self._parameterNode.SetNodeReferenceID("controlPoints", self.ui.controlPointsSelector.currentNodeID)
     self._parameterNode.SetNodeReferenceID("OutputVolume", self.ui.outputSelector.currentNodeID)
     self._parameterNode.SetParameter("Threshold", str(self.ui.imageThresholdSliderWidget.value))
     self._parameterNode.SetParameter("Invert", "true" if self.ui.invertOutputCheckBox.checked else "false")
     self._parameterNode.SetNodeReferenceID("OutputVolumeInverse", self.ui.invertedOutputSelector.currentNodeID)
+    # there is a lot of mess with a proper setting of selected models:
+    currentItems = vtk.vtkIdList()
+    self.ui.appliedModelsTreeView.currentItems(currentItems)
+    # we can probably also use `self.ui.appliedModelsTreeView.selectedIndexes()`, but it looks more complicated
+    currentItemsIDs = []
+    for i in range(currentItems.GetNumberOfIds()):
+      vtkId = currentItems.GetId(i)
+      try:
+        currentItemsIDs.append(self.shNode.GetItemDataNode(vtkId).GetID())
+      except AttributeError as e:  # it happens when the last item is unchecked
+        print(e)
+    self._parameterNode.SetNodeReferenceID("SelectedModels", ';'.join(currentItemsIDs))
 
     self._parameterNode.EndModify(wasModified)
 
@@ -269,16 +308,19 @@ class ModelOffsetWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     Run processing when user clicks "Apply" button.
     """
     try:
-
+      selectedItems = vtk.vtkIdList()
+      self.ui.appliedModelsTreeView.currentItems(selectedItems)
       # Compute output
-      self.logic.process(self.ui.inputSelector.currentNode(), self.ui.outputSelector.currentNode(),
-        self.ui.imageThresholdSliderWidget.value, self.ui.invertOutputCheckBox.checked)
+      self.logic.process(self.ui.inputSelector.currentNode(), self.ui.toolTipTransformSelector.currentNode(),
+        self.ui.controlPointsSelector.currentNode(), selectedItems, self.ui.offsetXCheckBox.checked, self.ui.offsetYCheckBox.checked,
+        self.ui.offsetZCheckBox.checked, self.ui.offsetAllModelsCheckBox.checked)
 
       # Compute inverted output (if needed)
       if self.ui.invertedOutputSelector.currentNode():
+        pass
         # If additional output volume is selected then result with inverted threshold is written there
-        self.logic.process(self.ui.inputSelector.currentNode(), self.ui.invertedOutputSelector.currentNode(),
-          self.ui.imageThresholdSliderWidget.value, not self.ui.invertOutputCheckBox.checked, showResult=False)
+        #self.logic.process(self.ui.inputSelector.currentNode(), self.ui.invertedOutputSelector.currentNode(),
+        #  self.ui.imageThresholdSliderWidget.value, not self.ui.invertOutputCheckBox.checked, showResult=False)
 
     except Exception as e:
       slicer.util.errorDisplay("Failed to compute results: "+str(e))
@@ -305,6 +347,7 @@ class ModelOffsetLogic(ScriptedLoadableModuleLogic):
     Called when the logic class is instantiated. Can be used for initializing member variables.
     """
     ScriptedLoadableModuleLogic.__init__(self)
+    self.shNode = slicer.mrmlScene.GetSubjectHierarchyNode()
 
   def setDefaultParameters(self, parameterNode):
     """
@@ -315,19 +358,28 @@ class ModelOffsetLogic(ScriptedLoadableModuleLogic):
     if not parameterNode.GetParameter("Invert"):
       parameterNode.SetParameter("Invert", "false")
 
-  def process(self, inputVolume, outputVolume, imageThreshold, invert=False, showResult=True):
+  def process(self, inputVolume, toolTipTransform, controlPoints, selectedModels, alongX, alongY, alongZ, allModels):
     """
     Run the processing algorithm.
     Can be used without GUI widget.
     :param inputVolume: volume to be thresholded
+    :param toolTipTransform: location of a tip of a tool
+    :param controlPoints: sequence of the points
+    :param vtk.vtkIdList selectedModels : list of models which should be transformed
     :param outputVolume: thresholding result
     :param imageThreshold: values above/below this threshold will be set to 0
     :param invert: if True then values above the threshold will be set to 0, otherwise values below are set to 0
     :param showResult: show output volume in slice viewers
     """
 
-    if not inputVolume or not outputVolume:
-      raise ValueError("Input or output volume is invalid")
+
+    if not inputVolume or not toolTipTransform or not controlPoints or not selectedModels:
+      raise ValueError("Input data are invalid")
+
+    selectedItemsIDs = []
+    for i in range(selectedModels.GetNumberOfIds()):
+      vtkId = selectedModels.GetId(i)
+      selectedItemsIDs.append(self.shNode.GetItemDataNode(vtkId).GetID())
 
     import time
     startTime = time.time()
