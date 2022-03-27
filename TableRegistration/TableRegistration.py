@@ -87,6 +87,7 @@ class TableRegistrationWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
     self.ui.tablePointsSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
     self.ui.fromPatientPointsSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
     self.ui.toPatientPointsSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
+    self.ui.finalTransformSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
     self.ui.offsetXCheckBox.connect("toggled(bool)", self.updateParameterNodeFromGUI)
     self.ui.offsetYCheckBox.connect("toggled(bool)", self.updateParameterNodeFromGUI)
     self.ui.offsetZCheckBox.connect("toggled(bool)", self.updateParameterNodeFromGUI)
@@ -185,20 +186,23 @@ class TableRegistrationWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
     self.ui.tablePointsSelector.setCurrentNode(self._parameterNode.GetNodeReference("tablePoints"))
     self.ui.fromPatientPointsSelector.setCurrentNode(self._parameterNode.GetNodeReference("fromPatientPoints"))
     self.ui.toPatientPointsSelector.setCurrentNode(self._parameterNode.GetNodeReference("toPatientPoints"))
+    self.ui.finalTransformSelector.setCurrentNode(self._parameterNode.GetNodeReference("finalTransform"))
     self.ui.offsetXCheckBox.checked = (self._parameterNode.GetParameter("ApplyOffsetX") == "true")
     self.ui.offsetYCheckBox.checked = (self._parameterNode.GetParameter("ApplyOffsetY") == "true")
     self.ui.offsetZCheckBox.checked = (self._parameterNode.GetParameter("ApplyOffsetZ") == "true")
 
     # Update buttons states and tooltips
     if self._parameterNode.GetNodeReference("patientVolume") \
-            and self._parameterNode.GetNodeReference("tablePoints"):
+            and self._parameterNode.GetNodeReference("tablePoints")\
+            and self._parameterNode.GetNodeReference("finalTransform"):
       self.ui.applyRotateButton.enabled = True
     else:
       self.ui.applyRotateButton.enabled = False
 
     if self._parameterNode.GetNodeReference("patientVolume") \
             and self._parameterNode.GetNodeReference("fromPatientPoints") \
-            and self._parameterNode.GetNodeReference("toPatientPoints"):
+            and self._parameterNode.GetNodeReference("toPatientPoints") \
+            and self._parameterNode.GetNodeReference("finalTransform"):
       self.ui.applyTranslateButton.enabled = True
     else:
       self.ui.applyTranslateButton.enabled = False
@@ -222,6 +226,7 @@ class TableRegistrationWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
     self._parameterNode.SetNodeReferenceID("tablePoints", self.ui.tablePointsSelector.currentNodeID)
     self._parameterNode.SetNodeReferenceID("fromPatientPoints", self.ui.fromPatientPointsSelector.currentNodeID)
     self._parameterNode.SetNodeReferenceID("toPatientPoints", self.ui.toPatientPointsSelector.currentNodeID)
+    self._parameterNode.SetNodeReferenceID("finalTransform", self.ui.finalTransformSelector.currentNodeID)
     self._parameterNode.SetParameter("ApplyOffsetX", "true" if self.ui.offsetXCheckBox.checked else "false")
     self._parameterNode.SetParameter("ApplyOffsetY", "true" if self.ui.offsetYCheckBox.checked else "false")
     self._parameterNode.SetParameter("ApplyOffsetZ", "true" if self.ui.offsetZCheckBox.checked else "false")
@@ -232,7 +237,8 @@ class TableRegistrationWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
     try:
       self.logic.process_translate(self.ui.patientVolumeSelector.currentNode(),
         self.ui.fromPatientPointsSelector.currentNode(),
-        self.ui.toPatientPointsSelector.currentNode())
+        self.ui.toPatientPointsSelector.currentNode(),
+        self.ui.finalTransformSelector.currentNode())
     except Exception as e:
       slicer.util.errorDisplay("Failed to compute results: "+str(e))
       import traceback
@@ -245,7 +251,8 @@ class TableRegistrationWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
     """
     try:
       self.logic.process_rotate(self.ui.patientVolumeSelector.currentNode(),
-        self.ui.tablePointsSelector.currentNode())
+        self.ui.tablePointsSelector.currentNode(),
+        self.ui.finalTransformSelector.currentNode())
     except Exception as e:
       slicer.util.errorDisplay("Failed to compute results: "+str(e))
       import traceback
@@ -285,8 +292,7 @@ class TableRegistrationLogic(ScriptedLoadableModuleLogic):
   def process(self):
     pass
 
-  def process_rotate(self, patientVolume, tablePoints):
-    print( patientVolume, tablePoints)
+  def process_rotate(self, patientVolume, tablePoints, finalTransform):
     """
     Run the processing algorithm.
     Can be used without GUI widget.
@@ -294,12 +300,45 @@ class TableRegistrationLogic(ScriptedLoadableModuleLogic):
     :param tablePoints: sequence of the points
     """
 
-    if not patientVolume or not tablePoints:
+    if not patientVolume or not tablePoints or not finalTransform:
       raise ValueError("Input data are invalid")
 
-  def process_translate(self, patientVolume, fromPatientPoints, toPatientPoints):
-    print(patientVolume, fromPatientPoints, toPatientPoints)
-    if not patientVolume or not fromPatientPoints or not toPatientPoints:
+    #print( patientVolume, tablePoints, finalTransform)
+
+    c0 = np.array([np.nan, np.nan, np.nan])
+    c1 = np.array([np.nan, np.nan, np.nan])
+    c2 = np.array([np.nan, np.nan, np.nan])
+
+    tablePoints.GetNthControlPointPositionWorld(0, c0)
+    tablePoints.GetNthControlPointPositionWorld(1, c1)
+    tablePoints.GetNthControlPointPositionWorld(2, c2)
+
+    rl = c1-c0
+    vtk.vtkMath.Normalize(rl)
+    si = c2-c1
+    vtk.vtkMath.Normalize(si)
+    ap = np.array([np.nan, np.nan, np.nan])
+    vtk.vtkMath.Cross(rl, si, ap)
+    angle_rl_si = abs(vtk.vtkMath.DegreesFromRadians(vtk.vtkMath.AngleBetweenVectors(rl, si)))
+    if not (85 < angle_rl_si < 95):
+      logging.warning("Control points on the table are collected very poorly. Got %f" % (angle_rl_si,))
+
+    rotation = np.zeros((4,4))
+    rotation[-1, -1] = 1
+    vtk.vtkMath.Orthogonalize3x3([rl, si, ap], rotation[:3, :3])
+
+    if finalTransform.GetParentTransformNode():
+      raise RuntimeError("Not implemented yet. Currently, final transformation should not be attached to any other transform.")
+
+    t = finalTransform.GetTransformToParent()
+    t.SetMatrix(rotation.ravel())
+
+    # this should be done outside the plugin:
+    # tablePoints.SetAndObserveTransformNodeID(finalTransform.GetID())
+
+  def process_translate(self, patientVolume, fromPatientPoints, toPatientPoints, finalTransform):
+    print(patientVolume, fromPatientPoints, toPatientPoints, finalTransform)
+    if not patientVolume or not fromPatientPoints or not toPatientPoints or not finalTransform:
       raise ValueError("Input data is empty")
 
 
