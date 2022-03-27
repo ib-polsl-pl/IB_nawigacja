@@ -298,6 +298,7 @@ class TableRegistrationLogic(ScriptedLoadableModuleLogic):
     Can be used without GUI widget.
     :param patientVolume: Input volume
     :param tablePoints: sequence of the points
+    :param vtkMRMLLinearTransformNode finalTransform: output transform
     """
 
     if not patientVolume or not tablePoints or not finalTransform:
@@ -337,9 +338,41 @@ class TableRegistrationLogic(ScriptedLoadableModuleLogic):
     # tablePoints.SetAndObserveTransformNodeID(finalTransform.GetID())
 
   def process_translate(self, patientVolume, fromPatientPoints, toPatientPoints, finalTransform):
-    print(patientVolume, fromPatientPoints, toPatientPoints, finalTransform)
+    """
+    :param patientVolume:
+    :param vtkMRMLMarkupsFiducialNode fromPatientPoints:
+    :param vtkMRMLMarkupsFiducialNode toPatientPoints:
+    :param vtkMRMLLinearTransformNode finalTransform: output transform
+    """
+    # print(patientVolume, fromPatientPoints, toPatientPoints, finalTransform)
     if not patientVolume or not fromPatientPoints or not toPatientPoints or not finalTransform:
       raise ValueError("Input data is empty")
+
+    if fromPatientPoints.GetNumberOfControlPoints() != toPatientPoints.GetNumberOfControlPoints():
+      raise ValueError("Two sets of points do not have the same number!")
+
+    c0 = np.array([np.nan, np.nan, np.nan])
+    c1 = np.array([np.nan, np.nan, np.nan])
+    c_from = []
+    c_to = []
+    for i in range(fromPatientPoints.GetNumberOfControlPoints()):
+      fromPatientPoints.GetNthControlPointPositionWorld(i, c0)
+      toPatientPoints.GetNthControlPointPositionWorld(i, c1)
+      c_from.append(c0.copy())
+      c_to.append(c1.copy())
+
+    c_from = np.array(c_from)
+    c_to = np.array(c_to)
+
+    centroid_from = np.mean(c_from, axis=0)
+    centroid_to = np.mean(c_to, axis=0)
+
+    translation = centroid_to - centroid_from
+    t = finalTransform.GetTransformToParent()
+    t.Translate(translation)
+
+    # print(finalTransform)
+
 
 
 
