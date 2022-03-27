@@ -88,8 +88,6 @@ class ModelOffsetWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.toolTipTransformSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
     self.ui.controlPointsSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
     self.ui.appliedModelsTreeView.connect("currentItemChanged(vtkIdType)", self.updateParameterNodeFromGUI)
-    self.ui.outputSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
-    self.ui.invertedOutputSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
     self.ui.offsetXCheckBox.connect("toggled(bool)", self.updateParameterNodeFromGUI)
     self.ui.offsetYCheckBox.connect("toggled(bool)", self.updateParameterNodeFromGUI)
     self.ui.offsetZCheckBox.connect("toggled(bool)", self.updateParameterNodeFromGUI)
@@ -197,8 +195,6 @@ class ModelOffsetWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     # BPWARNING add line here if a new widget is added
     self.ui.toolTipTransformSelector.setCurrentNode(self._parameterNode.GetNodeReference("toolTipTransform"))
     self.ui.controlPointsSelector.setCurrentNode(self._parameterNode.GetNodeReference("controlPoints"))
-    self.ui.outputSelector.setCurrentNode(self._parameterNode.GetNodeReference("OutputVolume"))
-    self.ui.invertedOutputSelector.setCurrentNode(self._parameterNode.GetNodeReference("OutputVolumeInverse"))
     self.ui.offsetXCheckBox.checked = (self._parameterNode.GetParameter("ApplyOffsetX") == "true")
     self.ui.offsetYCheckBox.checked = (self._parameterNode.GetParameter("ApplyOffsetY") == "true")
     self.ui.offsetZCheckBox.checked = (self._parameterNode.GetParameter("ApplyOffsetZ") == "true")
@@ -240,8 +236,6 @@ class ModelOffsetWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     # BPWARNING add line here if a new widget is added
     self._parameterNode.SetNodeReferenceID("toolTipTransform", self.ui.toolTipTransformSelector.currentNodeID)
     self._parameterNode.SetNodeReferenceID("controlPoints", self.ui.controlPointsSelector.currentNodeID)
-    self._parameterNode.SetNodeReferenceID("OutputVolume", self.ui.outputSelector.currentNodeID)
-    self._parameterNode.SetNodeReferenceID("OutputVolumeInverse", self.ui.invertedOutputSelector.currentNodeID)
     self._parameterNode.SetParameter("ApplyOffsetX", "true" if self.ui.offsetXCheckBox.checked else "false")
     self._parameterNode.SetParameter("ApplyOffsetY", "true" if self.ui.offsetYCheckBox.checked else "false")
     self._parameterNode.SetParameter("ApplyOffsetZ", "true" if self.ui.offsetZCheckBox.checked else "false")
