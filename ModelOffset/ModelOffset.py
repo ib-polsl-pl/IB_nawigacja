@@ -23,8 +23,8 @@ class ModelOffset(ScriptedLoadableModule):
     self.parent.dependencies = []  # TODO: add here list of module names that this module requires
     self.parent.contributors = ["Bartłomiej Pyciński (Silesian Univ Tech, Poland)"]  
     self.parent.helpText = """
-A module to apply X or Y offset to a model.
-See more information in <a href="https://github.com/ib-polsl-pl/ModelOffset.git">module documentation</a>.
+A module to apply additional offset to selected models.
+See more information in <a href="https://github.com/ib-polsl-pl/IB_nawigacja.git">module documentation</a>.
 """
     # TODO: replace with organization, grant and thanks
     self.parent.acknowledgementText = """TBD.
