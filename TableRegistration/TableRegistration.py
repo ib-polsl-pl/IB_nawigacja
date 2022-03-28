@@ -306,33 +306,38 @@ class TableRegistrationLogic(ScriptedLoadableModuleLogic):
 
     #print( patientVolume, tablePoints, finalTransform)
 
-    c0 = np.array([np.nan, np.nan, np.nan])
-    c1 = np.array([np.nan, np.nan, np.nan])
-    c2 = np.array([np.nan, np.nan, np.nan])
 
-    tablePoints.GetNthControlPointPositionWorld(0, c0)
-    tablePoints.GetNthControlPointPositionWorld(1, c1)
-    tablePoints.GetNthControlPointPositionWorld(2, c2)
+    lower_r = np.array([np.nan, np.nan, np.nan])
+    lower_l = np.array([np.nan, np.nan, np.nan])
+    upper_l = np.array([np.nan, np.nan, np.nan])
 
-    rl = c1-c0
-    vtk.vtkMath.Normalize(rl)
-    si = c2-c1
-    vtk.vtkMath.Normalize(si)
-    ap = np.array([np.nan, np.nan, np.nan])
-    vtk.vtkMath.Cross(rl, si, ap)
-    angle_rl_si = abs(vtk.vtkMath.DegreesFromRadians(vtk.vtkMath.AngleBetweenVectors(rl, si)))
+    tablePoints.GetNthControlPointPositionWorld(0, lower_r)
+    tablePoints.GetNthControlPointPositionWorld(1, lower_l)
+    tablePoints.GetNthControlPointPositionWorld(2, upper_l)
+
+    # RAS cooridnate system
+    l_r = lower_r - lower_l
+    vtk.vtkMath.Normalize(l_r)
+    i_s = upper_l - lower_l
+    vtk.vtkMath.Normalize(i_s)
+    p_a = np.array([np.nan, np.nan, np.nan])
+    vtk.vtkMath.Cross(i_s, l_r, p_a)
+    angle_rl_si = abs(vtk.vtkMath.DegreesFromRadians(vtk.vtkMath.AngleBetweenVectors(l_r, i_s)))
     if not (85 < angle_rl_si < 95):
       logging.warning("Control points on the table are collected very poorly. Got %f" % (angle_rl_si,))
 
-    rotation = np.zeros((4,4))
+    rotation = np.zeros((4, 4))
     rotation[-1, -1] = 1
-    vtk.vtkMath.Orthogonalize3x3([rl, si, ap], rotation[:3, :3])
+    vtk.vtkMath.Orthogonalize3x3([l_r, p_a, i_s], rotation[:3, :3])
 
     if finalTransform.GetParentTransformNode():
       raise RuntimeError("Not implemented yet. Currently, final transformation should not be attached to any other transform.")
 
-    t = finalTransform.GetTransformToParent()
-    t.SetMatrix(rotation.ravel())
+    # t = finalTransform.GetTransformToParent()
+    # t.SetMatrix(rotation.ravel())
+    final_matrix = vtk.vtkMatrix4x4()
+    final_matrix.DeepCopy(rotation.ravel())
+    finalTransform.SetMatrixTransformToParent(final_matrix)
 
     # this should be done outside the plugin:
     # tablePoints.SetAndObserveTransformNodeID(finalTransform.GetID())
@@ -367,9 +372,35 @@ class TableRegistrationLogic(ScriptedLoadableModuleLogic):
     centroid_from = np.mean(c_from, axis=0)
     centroid_to = np.mean(c_to, axis=0)
 
-    translation = centroid_to - centroid_from
-    t = finalTransform.GetTransformToParent()
-    t.Translate(translation)
+    # translation = centroid_to - centroid_from
+
+    x = vtk.vtkTransform()
+    x.DeepCopy(finalTransform.GetTransformToParent())
+    # remove previous translation
+    x.GetMatrix().SetElement(0, 3, 0)
+    x.GetMatrix().SetElement(1, 3, 0)
+    x.GetMatrix().SetElement(2, 3, 0)
+    x.Translate(centroid_from)
+    centroid_from_transformed = np.array(np.array(x.GetPosition()))
+    translation = centroid_to - centroid_from_transformed
+
+    m = x.GetMatrix()
+    # t = finalTransform.GetTransformToParent()
+    # m = t.GetMatrix()
+    m.SetElement(0, 3, translation[0])
+    m.SetElement(1, 3, translation[1])
+    m.SetElement(2, 3, translation[2])
+
+    x.SetMatrix(m)
+
+    finalTransform.SetMatrixTransformToParent(m)
+
+    # t.Update()
+
+    # final_matrix = vtk.vtkMatrix4x4()
+    # final_matrix.DeepCopy( m )
+    # finalTransform.SetMatrixTransformToParent(final_matrix)
+
 
     # print(finalTransform)
 

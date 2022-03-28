@@ -19,6 +19,3 @@ The only change - one can use `Developer Tools for Extensions` to load existing 
 
 
 ## experiments
-- Punkty nawigacja - w układzie współrzędnych trackera
-- Punkty stołu - w układzie współrzędnych trackera
-- polaris to dicom - to tak naprawdę reference to dicom (powstało z kalibracji punktów)
