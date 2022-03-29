@@ -283,11 +283,11 @@ class ModelOffsetWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.offsetXCheckBox.checked, self.ui.offsetYCheckBox.checked, self.ui.offsetZCheckBox.checked)
 
       # Compute inverted output (if needed)
-      if self.ui.invertedOutputSelector.currentNode():
-        pass
-        # If additional output volume is selected then result with inverted threshold is written there
-        #self.logic.process(self.ui.inputSelector.currentNode(), self.ui.invertedOutputSelector.currentNode(),
-        #  self.ui.imageThresholdSliderWidget.value, not self.ui.invertOutputCheckBox.checked, showResult=False)
+      # if self.ui.invertedOutputSelector.currentNode():
+      #  pass
+      #  # If additional output volume is selected then result with inverted threshold is written there
+      #  #self.logic.process(self.ui.inputSelector.currentNode(), self.ui.invertedOutputSelector.currentNode(),
+      #  #  self.ui.imageThresholdSliderWidget.value, not self.ui.invertOutputCheckBox.checked, showResult=False)
 
     except Exception as e:
       slicer.util.errorDisplay("Failed to compute results: "+str(e))
