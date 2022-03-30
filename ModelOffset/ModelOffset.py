@@ -152,7 +152,7 @@ class ModelOffsetWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     # we can duplicate the lines above only if we want to pre-fill other combo-boxes
 
     # set filter to a tree view
-    self.ui.appliedModelsTreeView.nodeTypes = ["vtkMRMLModelNode"]
+    self.ui.appliedModelsTreeView.nodeTypes = ["vtkMRMLModelNode", "vtkMRMLScalarVolumeNode", "vtkMRMLSegmentationNode"]
     # Other possibilities:
     # self.ui.appliedModelsTreeView.sortFilterProxyModel().setNodeTypes(["vtkMRMLScalarVolumeNode"])
     # self.ui.appliedModelsTreeView.sortFilterProxyModel().setNodeTypes(["vtkMRMLModelNode"])
